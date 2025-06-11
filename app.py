@@ -3,8 +3,14 @@ import requests
 import pandas as pd
 from datetime import datetime
 import plotly.express as px
+from dotenv import load_dotenv
+import os
 
-# Título
+# Carrega variáveis do .env
+load_dotenv()
+
+API_URL = os.getenv("API_URL")
+
 st.title("Visualização de Dados do Sensor")
 
 # Inputs de data e hora
@@ -17,25 +23,17 @@ with col2:
 # Botão de atualização
 if st.button("Atualizar"):
     try:
-        url = "https://web-production-f353f.up.railway.app/dados"  # atualize se necessário
-        resposta = requests.get(url)
+        resposta = requests.get(API_URL)
 
         if resposta.status_code == 200:
             dados = resposta.json()
             df = pd.DataFrame(dados)
 
-            # Converte as colunas para o tipo correto
             df["DATA"] = pd.to_datetime(df["DATA"])
             df["DATA_HORA"] = pd.to_datetime(df["DATA"].astype(str) + " " + df["HORA"])
 
-            # Filtra por intervalo de datas
             mask = (df["DATA"].dt.date >= data_inicial) & (df["DATA"].dt.date <= data_final)
-            df_filtrado = df.loc[mask]
-
-            # Ordena cronologicamente
-            df_filtrado = df_filtrado.sort_values(by="DATA_HORA")
-
-            # Reordena as colunas
+            df_filtrado = df.loc[mask].sort_values(by="DATA_HORA")
             df_filtrado = df_filtrado[["DATA", "HORA", "NOME_SENSOR", "VALOR"]]
 
             if not df_filtrado.empty:
@@ -45,10 +43,10 @@ if st.button("Atualizar"):
                 st.subheader("📈 Gráfico - Valor por Hora")
                 fig = px.line(
                     df_filtrado,
-                    x=pd.to_datetime(df_filtrado["DATA"].astype(str) + " " + df_filtrado["HORA"]),
+                    x="DATA_HORA",
                     y="VALOR",
                     title="Variação dos Valores ao Longo das Horas",
-                    labels={"x": "Data e Hora", "VALOR": "Valor"}
+                    labels={"DATA_HORA": "Data e Hora", "VALOR": "Valor"}
                 )
                 st.plotly_chart(fig)
             else:
@@ -57,4 +55,3 @@ if st.button("Atualizar"):
             st.error(f"Erro ao acessar a API: {resposta.status_code}")
     except Exception as e:
         st.error(f"Erro: {e}")
-
