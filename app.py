@@ -8,7 +8,6 @@ import os
 
 # Carrega variáveis do .env
 load_dotenv()
-
 API_URL = os.getenv("API_URL")
 
 st.title("Visualização de Dados do Sensor")
@@ -29,17 +28,20 @@ if st.button("Atualizar"):
             dados = resposta.json()
             df = pd.DataFrame(dados)
 
+            # Converte tipos
             df["DATA"] = pd.to_datetime(df["DATA"])
             df["DATA_HORA"] = pd.to_datetime(df["DATA"].astype(str) + " " + df["HORA"])
 
+            # Filtra intervalo
             mask = (df["DATA"].dt.date >= data_inicial) & (df["DATA"].dt.date <= data_final)
-            df_filtrado = df.loc[mask].sort_values(by="DATA_HORA")
-            df_filtrado = df_filtrado[["DATA", "HORA", "NOME_SENSOR", "VALOR"]]
+            df_filtrado = df.loc[mask].sort_values("DATA_HORA")
 
             if not df_filtrado.empty:
+                # Tabela em ordem desejada
                 st.subheader("📋 Tabela de Dados")
-                st.dataframe(df_filtrado)
+                st.dataframe(df_filtrado[["DATA", "HORA", "NOME_SENSOR", "VALOR"]])
 
+                # Gráfico com eixo X baseado em DATA_HORA
                 st.subheader("📈 Gráfico - Valor por Hora")
                 fig = px.line(
                     df_filtrado,
